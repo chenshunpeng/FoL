@@ -57,7 +57,7 @@ You can download our pretrained FoL model either via Google Drive or directly fr
 
 - **Google Drive:** [FoL (ViT-L)](https://drive.google.com/file/d/1-7LE_4Q0zL3S8lGVEH0Ob1NCFXq4KfJ8/view?usp=sharing) | [FoL (ViT-B)](https://drive.google.com/file/d/1Z05ZLFliQXOPJMH1YPdXqYjzC15-0nam/view?usp=sharing) | [All Models Folder](https://drive.google.com/drive/folders/1d3uEHdnzgWbGnj2g1ffLzLLI3pKuV7Vz?usp=sharing)
 
-- **Hugging Face Hub:** Install the client (`pip install huggingface_hub`) and download weights directly in Python:
+- **Hugging Face Hub:** Install the client (`pip install huggingface_hub`) and download weights directly in:
   ```python
   from huggingface_hub import hf_hub_download
   # Download ViT-L and ViT-B respectively
@@ -87,7 +87,7 @@ A quick way to explore FoL is via our [Colab demo](https://colab.research.google
 We provide a standalone visualization script, [FoL_visualize_match.py](https://github.com/chenshunpeng/FoL/blob/main/visualize_pairs/FoL_visualize_match.py), to demonstrate keypoint matching guided by <b><span style="color:red">Discriminative Region Guidance</span></b> with **optional** geometric verification. 
 
 > **🌟 Extension Work Notice:**
-> The visualization of local feature matching in the reranking stage shown here corresponds to the extended analysis in our journal version: [**FoL++ (Region Matters: Efficient and Reliable Region-Aware Visual Place Recognition)**](https://arxiv.org/abs/2604.22390).
+> The visualization of local feature matching in the reranking stage shown here corresponds to the extended analysis in our journal version: [**FoL++ (Region Matters)**](https://arxiv.org/abs/2604.22390).
 
 You can run it directly with the default sample images included in the repository:
 
