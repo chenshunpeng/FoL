@@ -41,10 +41,14 @@ def _build_fol(arch: str, pretrained: bool = True, progress: bool = True, map_lo
             _WEIGHT_URLS[arch], map_location=map_location, progress=progress
         )
         # Use loose loading by default to prevent script crashes during user fine-tuning
+
+        model_state_dict = checkpoint["model_state_dict"]
+        model_state_dict = {k.replace("module.", ""): v for k, v in model_state_dict.items()}
+
         strict = kwargs.get("strict", False)
-        missing_keys, unexpected_keys = model.load_state_dict(checkpoint, strict=strict)
+        missing_keys, unexpected_keys = model.load_state_dict(model_state_dict, strict=strict)
         if strict and (missing_keys or unexpected_keys):
-            raise RuntimeError(f"Strict loading failed. Missing: {missing_keys}; Unexpected: {unexpected_keys}")
+           raise RuntimeError(f"Strict loading failed. Missing: {missing_keys}; Unexpected: {unexpected_keys}")
 
     return model
 
