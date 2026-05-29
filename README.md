@@ -1,19 +1,17 @@
 # Focus on Local: Finding Reliable Discriminative Regions for Visual Place Recognition
 
-[![license](https://img.shields.io/badge/LICENSE-Apache-green)](https://github.com/chenshunpeng/FoL/blob/main/LICENSE)
-[![Hugging Face](https://img.shields.io/badge/Hugging%20Face-FoL-orange)](https://huggingface.co/shunpeng/FoL)
-[![arXiv](https://img.shields.io/badge/arXiv-2504.09881-red)](https://arxiv.org/abs/2504.09881)
-[![star](https://img.shields.io/github/stars/chenshunpeng/FoL)](https://github.com/chenshunpeng/FoL)
+<p align="center">
+  <a href="https://huggingface.co/shunpeng/FoL"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-FoL-F58220?style=flat-square&labelColor=444444" alt="Hugging Face"></a>
+  <a href="https://arxiv.org/abs/2504.09881"><img src="https://img.shields.io/badge/arXiv-2504.09881-D32F2F?style=flat-square&labelColor=444444" alt="arXiv"></a>
+  <a href="https://github.com/chenshunpeng/FoL"><img src="https://img.shields.io/github/stars/chenshunpeng/FoL?style=flat-square&labelColor=444444&color=EAB308&logo=github" alt="GitHub stars"></a>
+  <a href="https://colab.research.google.com/drive/1CxchBdFYxzwtCf5UOUgjMt8FxKMo2A-5?usp=sharing"><img src="https://img.shields.io/badge/Colab-Demo-2563EB?style=flat-square&labelColor=444444&logo=googlecolab" alt="Colab Demo"></a>
+</p>
 
 This is the official repository for the AAAI 2025 paper "FoL" available at [AAAI Paper Page](https://ojs.aaai.org/index.php/AAAI/article/view/32811). In addition, our paper and its extensive supplementary materials can be found on [arXiv](https://arxiv.org/abs/2504.09881).
 
 ## 📝 Summary
 
-We introduce Focus on Local **(FoL)**, a two-stage Visual Place Recognition (VPR) approach that enhances image retrieval and re-ranking by identifying and leveraging **reliable discriminative local regions**. Our method introduces three key contributions:
-
-- **Reliable Discriminative Region Modeling**: We propose two novel loss functions—**Extraction-Aggregation Spatial Alignment Loss (SAL)** and **Foreground-Background Contrast Enhancement Loss (CEL)**—to explicitly learn discriminative local regions.
-- **Weakly-Supervised Local Feature Learning**: We leverage pseudo-correspondences from aggregated global features to improve local matching supervision.
-- **Efficient Re-ranking with Discriminative Region Guidance**: We use the learned discriminative regions to guide local feature matching, improving accuracy and efficiency.
+We introduce Focus on Local **(FoL)**, a two-stage Visual Place Recognition (VPR) approach that enhances image retrieval and re-ranking by identifying and leveraging **reliable discriminative local regions**.
 
 <img src="image/pipeline.jpg" width="800px">
 
@@ -38,39 +36,33 @@ opencv-python==4.10.0.84
 ```
 > **Note — reproducibility:** The reranking step is sensitive to small numerical differences across `faiss-gpu`, `torch`, and `numpy` versions. Use the exact versions (in [requirements.txt](https://github.com/chenshunpeng/FoL/blob/main/requirements.txt)) to match paper results.
 
-Install the Hugging Face Hub client (if you want to pull weights directly):
+## ⚡ Quick Start with Torch Hub
 
-```bash
-pip install huggingface_hub
+To quickly use our model without cloning the repository, you can easily load it via Torch Hub:
+
+```python
+import torch
+
+# Load the default FoL model (ViT-L)
+model = torch.hub.load("chenshunpeng/FoL", "FoL", pretrained=True, trust_repo=True)
+
+# Alternatively, load specific backbones explicitly
+model_vitl = torch.hub.load("chenshunpeng/FoL", "fol_vitl14", pretrained=True, trust_repo=True)
+model_vitb = torch.hub.load("chenshunpeng/FoL", "fol_vitb14", pretrained=True, trust_repo=True)
 ```
 
 ## ⬇️ Download Pretrained Weights
 
-You can download our pretrained FoL model either via Google Drive or directly from Hugging Face:
+You can download our pretrained FoL model either via Google Drive or directly from Hugging Face.
 
-- **Google Drive (single files):**
-  - FoL (ViT-L, FoL_large.pth): [link](https://drive.google.com/file/d/1-7LE_4Q0zL3S8lGVEH0Ob1NCFXq4KfJ8/view?usp=sharing)
-  - FoL (ViT-B, FoL_base.pth): [link](https://drive.google.com/file/d/1Z05ZLFliQXOPJMH1YPdXqYjzC15-0nam/view?usp=sharing)
+- **Google Drive:** [FoL (ViT-L)](https://drive.google.com/file/d/1-7LE_4Q0zL3S8lGVEH0Ob1NCFXq4KfJ8/view?usp=sharing) | [FoL (ViT-B)](https://drive.google.com/file/d/1Z05ZLFliQXOPJMH1YPdXqYjzC15-0nam/view?usp=sharing) | [All Models Folder](https://drive.google.com/drive/folders/1d3uEHdnzgWbGnj2g1ffLzLLI3pKuV7Vz?usp=sharing)
 
-- **Google Drive (all models):** Shared folder "FoL_Trained_Models": [link](https://drive.google.com/drive/folders/1d3uEHdnzgWbGnj2g1ffLzLLI3pKuV7Vz?usp=sharing)
-
-- **Hugging Face Hub**  
+- **Hugging Face Hub:** Install the client (`pip install huggingface_hub`) and download weights directly in Python:
   ```python
   from huggingface_hub import hf_hub_download
-
-  # To download the ViT-L (Large) checkpoint:
-  fol_large_path = hf_hub_download(
-      repo_id="shunpeng/FoL",
-      filename="FoL_large.pth"
-  )
-  print("Downloaded ViT-L weights to:", fol_large_path)
-
-  # To download the ViT-B (Base) checkpoint:
-  fol_base_path = hf_hub_download(
-      repo_id="shunpeng/FoL",
-      filename="FoL_base.pth"
-  )
-  print("Downloaded ViT-B weights to:", fol_base_path)
+  # Download ViT-L and ViT-B respectively
+  fol_large_path = hf_hub_download(repo_id="shunpeng/FoL", filename="FoL_large.pth")
+  fol_base_path = hf_hub_download(repo_id="shunpeng/FoL", filename="FoL_base.pth")
   ```
 ---
 
@@ -88,14 +80,16 @@ python eval.py --eval_datasets_folder=./datasets/ --dataset_names pitts30k amste
 python train.py --eval_datasets_folder=./datasets/ --eval_dataset_name pitts30k --epochs_num=8 --train_batch_size=60 --lr=6e-5 --optim=adamw --resize 322 322 --save_dir train_log/
 ```
 
-## 🎨 Visualization
+## 🎨 Visualization [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1CxchBdFYxzwtCf5UOUgjMt8FxKMo2A-5?usp=sharing)
+
+A quick way to explore FoL is via our [Colab demo](https://colab.research.google.com/drive/1CxchBdFYxzwtCf5UOUgjMt8FxKMo2A-5?usp=sharing) and the included [notebook](https://github.com/chenshunpeng/FoL/blob/main/FoL_demo.ipynb).
 
 We provide a standalone visualization script, [FoL_visualize_match.py](https://github.com/chenshunpeng/FoL/blob/main/visualize_pairs/FoL_visualize_match.py), to demonstrate keypoint matching guided by <b><span style="color:red">Discriminative Region Guidance</span></b> with **optional** geometric verification. 
 
 > **🌟 Extension Work Notice:**
 > The visualization of local feature matching in the reranking stage shown here corresponds to the extended analysis in our journal version: [**FoL++ (Region Matters: Efficient and Reliable Region-Aware Visual Place Recognition)**](https://arxiv.org/abs/2604.22390).
 
-You can run it directly with the default sample images included in the repository (ensure you are running this from the `visualize_pairs` directory):
+You can run it directly with the default sample images included in the repository:
 
 ```bash
 cd visualize_pairs
@@ -203,11 +197,9 @@ Our another ICLR 2026 work (single-stage VPR based on DINOv2) [SAGE](https://ope
 
 
 ## 🙏 Acknowledgements
-This code is based on the excellent work of:
- - [SelaVPR](https://github.com/Lu-Feng/SelaVPR), [CricaVPR](https://github.com/Lu-Feng/CricaVPR)
- - [SALAD](https://github.com/serizba/salad)
- - [Visual Geo-localization benchmark](https://github.com/gmberton/deep-visual-geo-localization-benchmark), [VPR-datasets-downloader](https://github.com/gmberton/VPR-datasets-downloader)
- - [GSV-Cities](https://github.com/amaralibey/gsv-cities), [MixVPR](https://github.com/amaralibey/MixVPR)
+
+This code is based on the excellent work of [SelaVPR](https://github.com/Lu-Feng/SelaVPR), [CricaVPR](https://github.com/Lu-Feng/CricaVPR), [SALAD](https://github.com/serizba/salad), [Visual Geo-localization benchmark](https://github.com/gmberton/deep-visual-geo-localization-benchmark), [VPR-datasets-downloader](https://github.com/gmberton/VPR-datasets-downloader), [GSV-Cities](https://github.com/amaralibey/gsv-cities), and [MixVPR](https://github.com/amaralibey/MixVPR).
+
 
 ## 📌 Citation
 
