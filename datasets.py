@@ -3,6 +3,7 @@ import torch
 import faiss
 import logging
 import numpy as np
+from collections import OrderedDict
 from glob import glob
 from tqdm import tqdm
 from PIL import Image
@@ -22,6 +23,18 @@ base_transform = transforms.Compose([
 base_transform_match = transforms.Compose([
     transforms.ToTensor(),
 ])
+
+
+SF_XL_QUERY_FOLDERS = OrderedDict([
+    ("SF_XL_v1", "queries_v1"),
+    ("SF_XL_v2", "queries_v2"),
+    ("SF_XL_night", "queries_night"),
+    ("SF_XL_occlusion", "queries_occlusion"),
+])
+SF_XL_QUERY_ALIASES = {
+    dataset_name.lower(): (dataset_name, queries_folder)
+    for dataset_name, queries_folder in SF_XL_QUERY_FOLDERS.items()
+}
 
 def path_to_pil_img(path):
     return Image.open(path).convert("RGB")
@@ -55,22 +68,24 @@ class BaseDataset(data.Dataset):
     """Dataset with images from database and queries, used for inference (testing and building cache).
     """
     def __init__(self, args, datasets_folder="datasets", dataset_name="pitts30k", split="train"):
-        global queries_folder
         super().__init__()
         self.args = args
         self.dataset_name = dataset_name
+        normalized_dataset_name = dataset_name.lower()
+        is_sf_xl_group = normalized_dataset_name == "sf_xl"
+        is_sf_xl_query_set = normalized_dataset_name in SF_XL_QUERY_ALIASES
 
         # Modify the folder structure based on specific dataset names
-        if dataset_name in ["SF_XL_Occlusion", "SF_XL_Night"]:
-            image_folder = "processed"
-            dataset_name = "sf_xl"
+        if is_sf_xl_group or is_sf_xl_query_set:
+            if split != "test":
+                raise ValueError("SF_XL query sets are only available for the test split")
+            self.dataset_name = "SF_XL" if is_sf_xl_group else SF_XL_QUERY_ALIASES[normalized_dataset_name][0]
+            self.dataset_folder = join(datasets_folder, "SF_XL", split)
         elif dataset_name in ["SVOX_Night", "SVOX_Rain", "SVOX_Sun", "SVOX_Snow", "SVOX_Overcast", "SVOX"]:
-            image_folder = "images"
-            dataset_name = "svox"
+            self.dataset_folder = join(datasets_folder, "svox", "images", split)
         else:
-            image_folder = "images"
+            self.dataset_folder = join(datasets_folder, dataset_name, "images", split)
 
-        self.dataset_folder = join(datasets_folder, dataset_name, image_folder, split)
         if not os.path.exists(self.dataset_folder):
             raise FileNotFoundError(f"Folder {self.dataset_folder} does not exist")
 
@@ -93,20 +108,34 @@ class BaseDataset(data.Dataset):
                 queries_folder = join(self.dataset_folder, "queries_overcast")
             elif self.dataset_name == "SVOX":
                 queries_folder = join(self.dataset_folder, "queries")
-        elif self.dataset_name in ["SF_XL_Occlusion", "SF_XL_Night"]:
+        elif is_sf_xl_group or is_sf_xl_query_set:
             database_folder = join(self.dataset_folder, "database")
-            if self.dataset_name == "SF_XL_Occlusion":
-                queries_folder = join(self.dataset_folder, "queries_occlusion")
-            elif self.dataset_name == "SF_XL_Night":
-                queries_folder = join(self.dataset_folder, "queries_night")
         else:
             database_folder = join(self.dataset_folder, "database")
             queries_folder  = join(self.dataset_folder, "queries")
 
         if not os.path.exists(database_folder): raise FileNotFoundError(f"Folder {database_folder} does not exist")
-        if not os.path.exists(queries_folder) : raise FileNotFoundError(f"Folder {queries_folder} does not exist")
         self.database_paths = sorted(glob(join(database_folder, "**", "*.jpg"), recursive=True))
-        self.queries_paths  = sorted(glob(join(queries_folder, "**", "*.jpg"),  recursive=True))
+
+        self.query_group_slices = None
+        if is_sf_xl_group:
+            self.queries_paths = []
+            self.query_group_slices = OrderedDict()
+            for query_set_name, queries_folder_name in SF_XL_QUERY_FOLDERS.items():
+                queries_folder = join(self.dataset_folder, queries_folder_name)
+                if not os.path.exists(queries_folder):
+                    raise FileNotFoundError(f"Folder {queries_folder} does not exist")
+                query_paths = sorted(glob(join(queries_folder, "**", "*.jpg"), recursive=True))
+                start_index = len(self.queries_paths)
+                self.queries_paths.extend(query_paths)
+                self.query_group_slices[query_set_name] = (start_index, len(self.queries_paths))
+        else:
+            if is_sf_xl_query_set:
+                _, queries_folder_name = SF_XL_QUERY_ALIASES[normalized_dataset_name]
+                queries_folder = join(self.dataset_folder, queries_folder_name)
+            if not os.path.exists(queries_folder):
+                raise FileNotFoundError(f"Folder {queries_folder} does not exist")
+            self.queries_paths = sorted(glob(join(queries_folder, "**", "*.jpg"), recursive=True))
 
         self.database_utms = np.array(
             [(path.split("@")[1], path.split("@")[2]) for path in self.database_paths]).astype(np.float64)
@@ -161,6 +190,12 @@ class BaseDataset(data.Dataset):
     def __len__(self):
         return len(self.images_paths)
     def __repr__(self):
+        if self.query_group_slices:
+            group_counts = ", ".join(
+                f"{name}: {end - start}" for name, (start, end) in self.query_group_slices.items()
+            )
+            return (f"< {self.__class__.__name__}, {self.dataset_name} - #database: {self.database_num}; "
+                    f"#queries: {self.queries_num} ({group_counts}) >")
         return  (f"< {self.__class__.__name__}, {self.dataset_name} - #database: {self.database_num}; #queries: {self.queries_num} >")
     def get_positives(self):
         return self.soft_positives_per_query

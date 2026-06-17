@@ -2,6 +2,7 @@
 
 <p align="center">
   <a href="https://huggingface.co/shunpeng/FoL"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-FoL-F58220?style=flat-square&labelColor=444444" alt="Hugging Face"></a>
+  <a href="https://chenshunpeng.github.io/projects/FoL/"><img src="https://img.shields.io/badge/Project-Page-10B981?style=flat-square&labelColor=444444" alt="Project Page"></a>
   <a href="https://arxiv.org/abs/2504.09881"><img src="https://img.shields.io/badge/arXiv-2504.09881-D32F2F?style=flat-square&labelColor=444444" alt="arXiv"></a>
   <a href="https://github.com/chenshunpeng/FoL"><img src="https://img.shields.io/github/stars/chenshunpeng/FoL?style=flat-square&labelColor=444444&color=EAB308&logo=github" alt="GitHub stars"></a>
   <a href="https://colab.research.google.com/drive/1CxchBdFYxzwtCf5UOUgjMt8FxKMo2A-5?usp=sharing"><img src="https://img.shields.io/badge/Colab-Demo-2563EB?style=flat-square&labelColor=444444&logo=googlecolab" alt="Colab Demo"></a>
@@ -72,6 +73,33 @@ Assuming you have your datasets under `./datasets/` and your weights in `./weigh
 
 ```bash
 python eval.py --eval_datasets_folder=./datasets/ --dataset_names pitts30k amstertime --resume=./weights/FoL_large.pth
+```
+
+### SF_XL and Exact Low-Memory Reranking
+
+[SF-XL](https://github.com/gmberton/cosplace) is a large-scale VPR benchmark with one shared database and four query subsets: `SF_XL_v1`, `SF_XL_v2`, `SF_XL_night`, and `SF_XL_occlusion`. Passing `--dataset_names SF_XL` evaluates all four subsets in one run while extracting and searching the database only once.
+
+For memory-limited evaluation, enable `--efficient_ram_testing`. This mode keeps the same float32 features, exact chunked `IndexFlatL2` retrieval, and original local-feature reranking, but stores temporary query/candidate local features on SSD instead of keeping all database local features in RAM.
+
+Useful options:
+
+- `--efficient_ram_testing`: enable exact low-memory evaluation.
+- `--efficient_ram_cache_dir`: temporary SSD cache directory, default `/data_nvme/VPR/FoL`.
+- `--efficient_ram_max_cache_gib` / `--efficient_ram_min_free_gib`: default to `500` GiB.
+- `--recall_values`: defaults to `1 5 10 25 100`, so reranking uses top-100 by default.
+
+For SF_XL at 322×322, regular mode would require about `4816.54 GiB` RAM for database local features and `88.30 GiB` for database global features. Low-memory top-100 reranking uses at most about `371.03 GiB` temporary SSD cache (`3.67 GiB` query local + `367.36 GiB` candidate local) and only a few GiB extra CPU RAM.
+
+```bash
+python eval.py \
+  --eval_datasets_folder=./datasets/ \
+  --dataset_names SF_XL \
+  --resume=./weights/FoL_large.pth \
+  --resize 322 322 \
+  --efficient_ram_testing \
+  --efficient_ram_cache_dir=/data_nvme/VPR/FoL \
+  --efficient_ram_max_cache_gib=500 \
+  --efficient_ram_min_free_gib=500
 ```
 
 ## 🚀 Train
@@ -189,6 +217,10 @@ The following table reports results at 322×322 on six datasets for both backbon
     <tr><td>Tokyo24/7</td><td>96.5</td><td>98.1</td><td>98.4</td><td>$\color{red}{\mathbf{97.1}}$</td><td>97.8</td><td>98.7</td><td>94.6</td><td>96.5</td><td>96.8</td><td>$\color{red}{\mathbf{97.5}}$</td><td>98.1</td><td>98.4</td></tr>
     <tr><td>Nordland*</td><td>74.1</td><td>88.8</td><td>92.2</td><td>$\color{red}{\mathbf{80.8}}$</td><td>92.0</td><td>94.7</td><td>62.5</td><td>80.3</td><td>85.0</td><td>$\color{red}{\mathbf{78.2}}$</td><td>90.2</td><td>92.9</td></tr>
     <tr><td>Eynsham</td><td>91.5</td><td>95.1</td><td>96.1</td><td>$\color{red}{\mathbf{91.7}}$</td><td>95.4</td><td>96.4</td><td>$\color{red}{\mathbf{91.3}}$</td><td>95.2</td><td>96.0</td><td>$\color{red}{\mathbf{91.3}}$</td><td>95.1</td><td>96.1</td></tr>
+    <tr><td>SF-XL-testv1</td><td>90.4</td><td>93.8</td><td>94.7</td><td>$\color{red}{\mathbf{93.4}}$</td><td>95.6</td><td>96.1</td><td>86.1</td><td>91.4</td><td>92.7</td><td>$\color{red}{\mathbf{90.0}}$</td><td>93.4</td><td>94.4</td></tr>
+    <tr><td>SF-XL-testv2</td><td>$\color{red}{\mathbf{94.1}}$</td><td>98.2</td><td>98.5</td><td>93.5</td><td>97.7</td><td>98.5</td><td>94.1</td><td>97.7</td><td>98.5</td><td>$\color{red}{\mathbf{94.8}}$</td><td>97.2</td><td>98.0</td></tr>
+    <tr><td>SF-XL-night</td><td>53.4</td><td>67.0</td><td>70.2</td><td>$\color{red}{\mathbf{56.0}}$</td><td>70.0</td><td>75.8</td><td>44.8</td><td>56.7</td><td>61.8</td><td>$\color{red}{\mathbf{52.8}}$</td><td>64.8</td><td>67.6</td></tr>
+    <tr><td>SF-XL-occlusion</td><td>44.7</td><td>67.1</td><td>71.1</td><td>$\color{red}{\mathbf{51.3}}$</td><td>72.4</td><td>78.9</td><td>$\color{red}{\mathbf{48.7}}$</td><td>56.6</td><td>60.5</td><td>46.1</td><td>61.8</td><td>67.1</td></tr>
   </tbody>
 </table>
 
@@ -222,3 +254,4 @@ If you find this repo useful for your research, please consider citing our origi
   journal={arXiv preprint arXiv:2604.22390},
   year={2026}
 }
+```

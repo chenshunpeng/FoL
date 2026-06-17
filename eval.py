@@ -17,7 +17,7 @@ warnings.filterwarnings("ignore")
 args = parser.parse_arguments()
 start_time = datetime.now()
 args.save_dir = join("test", args.save_dir, start_time.strftime('%Y-%m-%d_%H-%M-%S'))
-commons.setup_logging(args.save_dir)
+commons.setup_logging(args.save_dir, console="info")
 commons.make_deterministic(args.seed)
 args.features_dim = 8448
 logging.info(f"Arguments: {args}")
@@ -37,6 +37,11 @@ for dataset_name in args.dataset_names:
     test_ds = datasets.BaseDataset(args, args.eval_datasets_folder, dataset_name, "test")
     logging.info(f"Test set: {test_ds}")
     recalls, recalls_str, recalls_rerank, recalls_str_rerank = test_FoL.test(args, test_ds, model, args.test_method)
-    logging.info(f"Recalls on test set {test_ds}: {recalls_str}")
-    logging.info(f"Reranking recalls on test set {test_ds}: {recalls_str_rerank}")
+    if isinstance(recalls_str, dict):
+        for query_set_name in recalls_str:
+            logging.info(f"Recalls on {query_set_name}: {recalls_str[query_set_name]}")
+            logging.info(f"Reranking recalls on {query_set_name}: {recalls_str_rerank[query_set_name]}")
+    else:
+        logging.info(f"Recalls on test set {test_ds}: {recalls_str}")
+        logging.info(f"Reranking recalls on test set {test_ds}: {recalls_str_rerank}")
     logging.info(f"Finished in {str(datetime.now() - start_time)[:-7]}")

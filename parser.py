@@ -34,10 +34,33 @@ def parse_arguments():
                         help="This includes pre/post-processing methods and prediction refinement")
     parser.add_argument("--majority_weight", type=float, default=0.01, 
                         help="only for majority voting, scale factor, the higher it is the more importance is given to agreement")
-    parser.add_argument("--efficient_ram_testing", action='store_true', help="_")
+    parser.add_argument(
+        "--efficient_ram_testing",
+        action="store_true",
+        help=("Use exact float32 retrieval with a chunked database and disk-backed "
+              "local features. This reduces RAM usage without approximate search."),
+    )
+    parser.add_argument(
+        "--efficient_ram_cache_dir",
+        type=str,
+        default="/data_nvme/VPR/FoL",
+        help="Directory used for temporary local-feature caches in low-memory mode.",
+    )
+    parser.add_argument(
+        "--efficient_ram_max_cache_gib",
+        type=float,
+        default=500.0,
+        help="Hard upper limit for one low-memory evaluation cache, in GiB.",
+    )
+    parser.add_argument(
+        "--efficient_ram_min_free_gib",
+        type=float,
+        default=500.0,
+        help="Minimum free space that must remain on the cache filesystem, in GiB.",
+    )
     parser.add_argument("--val_positive_dist_threshold", type=int, default=25, help="_")
     parser.add_argument("--train_positives_dist_threshold", type=int, default=10, help="_")
-    parser.add_argument('--recall_values', type=int, default=[1, 5, 10, 25, 75], nargs="+",
+    parser.add_argument('--recall_values', type=int, default=[1, 5, 10, 25, 100], nargs="+",
                         help="Recalls to be computed, such as R@5.")
     # Paths parameters
     parser.add_argument("--eval_datasets_folder", type=str, default=None, help="Path with all datasets")
@@ -63,4 +86,3 @@ def parse_arguments():
                             "export DATASETS_FOLDER=../datasets_vg/datasets")
     
     return args
-
