@@ -123,7 +123,7 @@ def rerank(predictions, queries_local_features, database_local_features):
 
 
 def compute_recalls(args, eval_ds, predictions):
-    """Compute recalls for the full query set or for each SF_XL query group."""
+    """Compute recalls for the full query set or for each configured query group."""
     positives_per_query = eval_ds.get_positives()
 
     def compute_for_slice(start_index, end_index):

@@ -75,31 +75,22 @@ Assuming you have your datasets under `./datasets/` and your weights in `./weigh
 python eval.py --eval_datasets_folder=./datasets/ --dataset_names pitts30k amstertime --resume=./weights/FoL_large.pth
 ```
 
-### SF_XL and Exact Low-Memory Reranking
+### SF-XL, SVOX, and Exact Low-Memory Reranking
 
-[SF-XL](https://github.com/gmberton/cosplace) is a large-scale VPR benchmark with one shared database and four query subsets: `SF_XL_v1`, `SF_XL_v2`, `SF_XL_night`, and `SF_XL_occlusion`. Passing `--dataset_names SF_XL` evaluates all four subsets in one run while extracting and searching the database only once.
+`SF_XL` and `SVOX` evaluate multiple query subsets against one shared database. `--dataset_names SF_XL` reports `v1`, `v2`, `night`, and `occlusion`, while `--dataset_names SVOX` reports `SVOX`, `night`, `overcast`, `rain`, `snow`, and `sun`; the shared database/gallery is extracted and searched only once.
 
-For memory-limited evaluation, enable `--efficient_ram_testing`. This mode keeps the same float32 features, exact chunked `IndexFlatL2` retrieval, and original local-feature reranking, but stores temporary query/candidate local features on SSD instead of keeping all database local features in RAM.
+For memory-limited evaluation, add `--efficient_ram_testing`. It preserves float32 features, exact chunked `IndexFlatL2` retrieval, and the original local reranking, while caching only query and retrieved-candidate local features on SSD.
 
-Useful options:
+Use `--efficient_ram_cache_dir` to select the temporary SSD directory. `--efficient_ram_max_cache_gib` and `--efficient_ram_min_free_gib` both default to $\color{red}{\mathbf{500\ GiB}}$, and reranking depth follows `--recall_values` (top-100 by default).
 
-- `--efficient_ram_testing`: enable exact low-memory evaluation.
-- `--efficient_ram_cache_dir`: temporary SSD cache directory, default `/data_nvme/VPR/FoL`.
-- `--efficient_ram_max_cache_gib` / `--efficient_ram_min_free_gib`: default to `500` GiB.
-- `--recall_values`: defaults to `1 5 10 25 100`, so reranking uses top-100 by default.
-
-For SF_XL at 322×322, regular mode would require about `4816.54 GiB` RAM for database local features and `88.30 GiB` for database global features. Low-memory top-100 reranking uses at most about `371.03 GiB` temporary SSD cache (`3.67 GiB` query local + `367.36 GiB` candidate local) and only a few GiB extra CPU RAM.
+For [SF-XL](https://github.com/gmberton/cosplace) at 322×322, regular mode would require about $\color{red}{\mathbf{4816.54\ GiB}}$ RAM for database local features and $\color{red}{\mathbf{88.30\ GiB}}$ for database global features. Low-memory top-100 reranking uses at most about $\color{red}{\mathbf{371.03\ GiB}}$ temporary SSD cache ($\color{red}{\mathbf{3.67\ GiB}}$ query local + $\color{red}{\mathbf{367.36\ GiB}}$ candidate local) and only a few GiB extra CPU RAM.
 
 ```bash
-python eval.py \
-  --eval_datasets_folder=./datasets/ \
-  --dataset_names SF_XL \
-  --resume=./weights/FoL_large.pth \
-  --resize 322 322 \
-  --efficient_ram_testing \
-  --efficient_ram_cache_dir=/data_nvme/VPR/FoL \
-  --efficient_ram_max_cache_gib=500 \
-  --efficient_ram_min_free_gib=500
+# SF-XL: four query subsets
+python eval.py --eval_datasets_folder=./datasets/ --dataset_names SF_XL --resume=./weights/FoL_large.pth --resize 322 322 --efficient_ram_testing --efficient_ram_cache_dir=/data_nvme/VPR/FoL --efficient_ram_max_cache_gib=500 --efficient_ram_min_free_gib=500
+
+# SVOX: six query subsets
+python eval.py --eval_datasets_folder=./datasets/ --dataset_names SVOX --resume=./weights/FoL_large.pth --resize 322 322 --efficient_ram_testing --efficient_ram_cache_dir=/data_nvme/VPR/FoL --efficient_ram_max_cache_gib=500 --efficient_ram_min_free_gib=500
 ```
 
 ## 🚀 Train
@@ -160,29 +151,29 @@ For Nordland variants: `Nordland*` uses 2,760 summer queries against a 27,592-im
   <thead>
     <tr>
       <th rowspan="2" style="text-align:left;">Dataset</th>
-      <th colspan="3">global</th>
-      <th colspan="3">re-ranking</th>
+      <th>global</th>
+      <th>re-ranking</th>
       <th rowspan="2" style="text-align:left;">Dataset</th>
-      <th colspan="3">global</th>
-      <th colspan="3">re-ranking</th>
+      <th>global</th>
+      <th>re-ranking</th>
     </tr>
     <tr>
-      <th>R1</th><th>R5</th><th>R10</th>
-      <th>R1</th><th>R5</th><th>R10</th>
-      <th>R1</th><th>R5</th><th>R10</th>
-      <th>R1</th><th>R5</th><th>R10</th>
+      <th>R@1 @5 @10</th>
+      <th>R@1 @5 @10</th>
+      <th>R@1 @5 @10</th>
+      <th>R@1 @5 @10</th>
     </tr>
   </thead>
   <tbody>
-    <tr><td>Pitts250k-test</td><td>96.5</td><td>99.1</td><td>99.5</td><td>$\color{red}{\mathbf{97.0}}$</td><td>99.2</td><td>99.5</td><td>MSLS-val</td><td>93.1</td><td>96.9</td><td>97.4</td><td>$\color{red}{\mathbf{93.5}}$</td><td>96.9</td><td>97.6</td></tr>
-    <tr><td>MSLS-challenge</td><td>78.7</td><td>90.8</td><td>93.0</td><td>$\color{red}{\mathbf{80.0}}$</td><td>90.9</td><td>93.0</td><td>Tokyo24/7</td><td>96.2</td><td>98.7</td><td>98.7</td><td>$\color{red}{\mathbf{98.4}}$</td><td>99.1</td><td>99.4</td></tr>
-    <tr><td>Pitts30k</td><td>93.9</td><td>97.2</td><td>98.1</td><td>$\color{red}{\mathbf{94.5}}$</td><td>97.4</td><td>98.2</td><td>Sped</td><td>$\color{red}{\mathbf{92.1}}$</td><td>96.5</td><td>98.0</td><td>91.8</td><td>96.5</td><td>97.4</td></tr>
-    <tr><td>Amstertime</td><td>64.6</td><td>84.3</td><td>88.2</td><td>$\color{red}{\mathbf{70.1}}$</td><td>89.0</td><td>91.8</td><td>Eynsham</td><td>91.7</td><td>95.3</td><td>96.2</td><td>$\color{red}{\mathbf{92.4}}$</td><td>95.8</td><td>96.6</td></tr>
-    <tr><td>Nordland*</td><td>78.3</td><td>90.8</td><td>94.0</td><td>$\color{red}{\mathbf{85.8}}$</td><td>94.9</td><td>96.8</td><td>Nordland**</td><td>87.8</td><td>94.5</td><td>96.4</td><td>$\color{red}{\mathbf{92.6}}$</td><td>96.9</td><td>98.0</td></tr>
-    <tr><td>SF-XL Night</td><td>53.4</td><td>65.9</td><td>71.7</td><td>$\color{red}{\mathbf{60.5}}$</td><td>72.8</td><td>75.8</td><td>SF-XL Occlusion</td><td>51.3</td><td>65.8</td><td>73.7</td><td>$\color{red}{\mathbf{61.8}}$</td><td>77.6</td><td>77.6</td></tr>
-    <tr><td>SVOX</td><td>98.4</td><td>99.4</td><td>99.6</td><td>$\color{red}{\mathbf{98.9}}$</td><td>99.6</td><td>99.7</td><td>SVOX Sun</td><td>98.1</td><td>99.4</td><td>99.5</td><td>$\color{red}{\mathbf{98.8}}$</td><td>99.8</td><td>99.9</td></tr>
-    <tr><td>SVOX Night</td><td>98.3</td><td>99.6</td><td>99.6</td><td>$\color{red}{\mathbf{98.8}}$</td><td>99.8</td><td>99.9</td><td>SVOX Snow</td><td>99.1</td><td>99.7</td><td>99.8</td><td>$\color{red}{\mathbf{99.3}}$</td><td>99.8</td><td>99.9</td></tr>
-    <tr><td>SVOX Overcast</td><td>97.9</td><td>99.2</td><td>99.3</td><td>$\color{red}{\mathbf{98.3}}$</td><td>99.3</td><td>99.7</td><td>SVOX Rain</td><td>96.5</td><td>99.6</td><td>99.7</td><td>$\color{red}{\mathbf{98.2}}$</td><td>99.9</td><td>99.9</td></tr>
+    <tr><td>Pitts250k-test</td><td>96.5 99.1 99.5</td><td>$\color{red}{\mathbf{97.0}}$ 99.2 99.5</td><td>MSLS-val</td><td>93.1 96.9 97.4</td><td>$\color{red}{\mathbf{93.5}}$ 96.9 97.6</td></tr>
+    <tr><td>MSLS-challenge</td><td>78.7 90.8 93.0</td><td>$\color{red}{\mathbf{80.0}}$ 90.9 93.0</td><td>Tokyo24/7</td><td>96.2 98.7 98.7</td><td>$\color{red}{\mathbf{98.4}}$ 99.1 99.4</td></tr>
+    <tr><td>Pitts30k</td><td>93.9 97.2 98.1</td><td>$\color{red}{\mathbf{94.5}}$ 97.4 98.2</td><td>Sped</td><td>$\color{red}{\mathbf{92.1}}$ 96.5 98.0</td><td>91.8 96.5 97.4</td></tr>
+    <tr><td>Amstertime</td><td>64.6 84.3 88.2</td><td>$\color{red}{\mathbf{70.1}}$ 89.0 91.8</td><td>Eynsham</td><td>91.7 95.3 96.2</td><td>$\color{red}{\mathbf{92.4}}$ 95.8 96.6</td></tr>
+    <tr><td>Nordland*</td><td>78.3 90.8 94.0</td><td>$\color{red}{\mathbf{85.8}}$ 94.9 96.8</td><td>Nordland**</td><td>87.8 94.5 96.4</td><td>$\color{red}{\mathbf{92.6}}$ 96.9 98.0</td></tr>
+    <tr><td>SF-XL Night</td><td>53.4 65.9 71.7</td><td>$\color{red}{\mathbf{60.5}}$ 72.8 75.8</td><td>SF-XL Occlusion</td><td>51.3 65.8 73.7</td><td>$\color{red}{\mathbf{61.8}}$ 77.6 77.6</td></tr>
+    <tr><td>SVOX</td><td>98.4 99.4 99.6</td><td>$\color{red}{\mathbf{98.9}}$ 99.6 99.7</td><td>SVOX Sun</td><td>98.1 99.4 99.5</td><td>$\color{red}{\mathbf{98.8}}$ 99.8 99.9</td></tr>
+    <tr><td>SVOX Night</td><td>98.3 99.6 99.6</td><td>$\color{red}{\mathbf{98.8}}$ 99.8 99.9</td><td>SVOX Snow</td><td>99.1 99.7 99.8</td><td>$\color{red}{\mathbf{99.3}}$ 99.8 99.9</td></tr>
+    <tr><td>SVOX Overcast</td><td>97.9 99.2 99.3</td><td>$\color{red}{\mathbf{98.3}}$ 99.3 99.7</td><td>SVOX Rain</td><td>96.5 99.6 99.7</td><td>$\color{red}{\mathbf{98.2}}$ 99.9 99.9</td></tr>
   </tbody>
 </table>
 
@@ -194,35 +185,42 @@ The following table reports results at 322×322 on six datasets for both backbon
   <thead>
     <tr>
       <th rowspan="3" style="text-align:left;">Dataset</th>
-      <th colspan="6"><a href="https://drive.google.com/file/d/1-7LE_4Q0zL3S8lGVEH0Ob1NCFXq4KfJ8/view?usp=sharing">ViT-L</a></th>
-      <th colspan="6"><a href="https://drive.google.com/file/d/1Z05ZLFliQXOPJMH1YPdXqYjzC15-0nam/view?usp=sharing">ViT-B</a></th>
+      <th colspan="2"><a href="https://drive.google.com/file/d/1-7LE_4Q0zL3S8lGVEH0Ob1NCFXq4KfJ8/view?usp=sharing">ViT-L</a></th>
+      <th colspan="2"><a href="https://drive.google.com/file/d/1Z05ZLFliQXOPJMH1YPdXqYjzC15-0nam/view?usp=sharing">ViT-B</a></th>
     </tr>
     <tr>
-      <th colspan="3">global</th>
-      <th colspan="3">re-ranking</th>
-      <th colspan="3">global</th>
-      <th colspan="3">re-ranking</th>
+      <th>global</th>
+      <th>re-ranking</th>
+      <th>global</th>
+      <th>re-ranking</th>
     </tr>
     <tr>
-      <th>R1</th><th>R5</th><th>R10</th>
-      <th>R1</th><th>R5</th><th>R10</th>
-      <th>R1</th><th>R5</th><th>R10</th>
-      <th>R1</th><th>R5</th><th>R10</th>
+      <th>R@1 @5 @10</th>
+      <th>R@1 @5 @10</th>
+      <th>R@1 @5 @10</th>
+      <th>R@1 @5 @10</th>
     </tr>
   </thead>
   <tbody>
-    <tr><td>Pitts30k-test</td><td>93.6</td><td>96.9</td><td>97.9</td><td>$\color{red}{\mathbf{93.9}}$</td><td>96.9</td><td>98.1</td><td>92.1</td><td>96.4</td><td>97.6</td><td>$\color{red}{\mathbf{93.1}}$</td><td>96.9</td><td>97.7</td></tr>
-    <tr><td>MSLS-val</td><td>$\color{red}{\mathbf{92.8}}$</td><td>96.9</td><td>97.2</td><td>90.1</td><td>95.7</td><td>96.9</td><td>91.1</td><td>95.7</td><td>96.4</td><td>$\color{red}{\mathbf{91.5}}$</td><td>96.2</td><td>96.8</td></tr>
-    <tr><td>Nordland**</td><td>83.8</td><td>92.6</td><td>95.1</td><td>$\color{red}{\mathbf{87.9}}$</td><td>94.8</td><td>96.6</td><td>72.7</td><td>85.5</td><td>89.6</td><td>$\color{red}{\mathbf{85.4}}$</td><td>92.7</td><td>94.8</td></tr>
-    <tr><td>Tokyo24/7</td><td>96.5</td><td>98.1</td><td>98.4</td><td>$\color{red}{\mathbf{97.1}}$</td><td>97.8</td><td>98.7</td><td>94.6</td><td>96.5</td><td>96.8</td><td>$\color{red}{\mathbf{97.5}}$</td><td>98.1</td><td>98.4</td></tr>
-    <tr><td>Nordland*</td><td>74.1</td><td>88.8</td><td>92.2</td><td>$\color{red}{\mathbf{80.8}}$</td><td>92.0</td><td>94.7</td><td>62.5</td><td>80.3</td><td>85.0</td><td>$\color{red}{\mathbf{78.2}}$</td><td>90.2</td><td>92.9</td></tr>
-    <tr><td>Eynsham</td><td>91.5</td><td>95.1</td><td>96.1</td><td>$\color{red}{\mathbf{91.7}}$</td><td>95.4</td><td>96.4</td><td>$\color{red}{\mathbf{91.3}}$</td><td>95.2</td><td>96.0</td><td>$\color{red}{\mathbf{91.3}}$</td><td>95.1</td><td>96.1</td></tr>
-    <tr><td>SF-XL-testv1</td><td>90.4</td><td>93.8</td><td>94.7</td><td>$\color{red}{\mathbf{93.4}}$</td><td>95.6</td><td>96.1</td><td>86.1</td><td>91.4</td><td>92.7</td><td>$\color{red}{\mathbf{90.0}}$</td><td>93.4</td><td>94.4</td></tr>
-    <tr><td>SF-XL-testv2</td><td>$\color{red}{\mathbf{94.1}}$</td><td>98.2</td><td>98.5</td><td>93.5</td><td>97.7</td><td>98.5</td><td>94.1</td><td>97.7</td><td>98.5</td><td>$\color{red}{\mathbf{94.8}}$</td><td>97.2</td><td>98.0</td></tr>
-    <tr><td>SF-XL-night</td><td>53.4</td><td>67.0</td><td>70.2</td><td>$\color{red}{\mathbf{56.0}}$</td><td>70.0</td><td>75.8</td><td>44.8</td><td>56.7</td><td>61.8</td><td>$\color{red}{\mathbf{52.8}}$</td><td>64.8</td><td>67.6</td></tr>
-    <tr><td>SF-XL-occlusion</td><td>44.7</td><td>67.1</td><td>71.1</td><td>$\color{red}{\mathbf{51.3}}$</td><td>72.4</td><td>78.9</td><td>$\color{red}{\mathbf{48.7}}$</td><td>56.6</td><td>60.5</td><td>46.1</td><td>61.8</td><td>67.1</td></tr>
+    <tr><td>Pitts30k-test</td><td>93.6 96.9 97.9</td><td>$\color{red}{\mathbf{93.9}}$ 96.9 98.1</td><td>92.1 96.4 97.6</td><td>$\color{red}{\mathbf{93.1}}$ 96.9 97.7</td></tr>
+    <tr><td>MSLS-val</td><td>$\color{red}{\mathbf{92.8}}$ 96.9 97.2</td><td>90.1 95.7 96.9</td><td>91.1 95.7 96.4</td><td>$\color{red}{\mathbf{91.5}}$ 96.2 96.8</td></tr>
+    <tr><td>Nordland**</td><td>83.8 92.6 95.1</td><td>$\color{red}{\mathbf{87.9}}$ 94.8 96.6</td><td>72.7 85.5 89.6</td><td>$\color{red}{\mathbf{85.4}}$ 92.7 94.8</td></tr>
+    <tr><td>Tokyo24/7</td><td>96.5 98.1 98.4</td><td>$\color{red}{\mathbf{97.1}}$ 97.8 98.7</td><td>94.6 96.5 96.8</td><td>$\color{red}{\mathbf{97.5}}$ 98.1 98.4</td></tr>
+    <tr><td>Nordland*</td><td>74.1 88.8 92.2</td><td>$\color{red}{\mathbf{80.8}}$ 92.0 94.7</td><td>62.5 80.3 85.0</td><td>$\color{red}{\mathbf{78.2}}$ 90.2 92.9</td></tr>
+    <tr><td>Eynsham</td><td>91.5 95.1 96.1</td><td>$\color{red}{\mathbf{91.7}}$ 95.4 96.4</td><td>$\color{red}{\mathbf{91.3}}$ 95.2 96.0</td><td>$\color{red}{\mathbf{91.3}}$ 95.1 96.1</td></tr>
+    <tr><td>SF-XL-testv1</td><td>90.4 93.8 94.7</td><td>$\color{red}{\mathbf{93.4}}$ 95.6 96.1</td><td>86.1 91.4 92.7</td><td>$\color{red}{\mathbf{90.0}}$ 93.4 94.4</td></tr>
+    <tr><td>SF-XL-testv2</td><td>$\color{red}{\mathbf{94.1}}$ 98.2 98.5</td><td>93.5 97.7 98.5</td><td>94.1 97.7 98.5</td><td>$\color{red}{\mathbf{94.8}}$ 97.2 98.0</td></tr>
+    <tr><td>SF-XL-night</td><td>53.4 67.0 70.2</td><td>$\color{red}{\mathbf{56.0}}$ 70.0 75.8</td><td>44.8 56.7 61.8</td><td>$\color{red}{\mathbf{52.8}}$ 64.8 67.6</td></tr>
+    <tr><td>SF-XL-occlusion</td><td>44.7 67.1 71.1</td><td>$\color{red}{\mathbf{51.3}}$ 72.4 78.9</td><td>$\color{red}{\mathbf{48.7}}$ 56.6 60.5</td><td>46.1 61.8 67.1</td></tr>
+    <tr><td>SVOX</td><td>98.3 99.4 99.6</td><td>$\color{red}{\mathbf{98.7}}$ 99.5 99.7</td><td>98.3 99.4 99.5</td><td>$\color{red}{\mathbf{98.4}}$ 99.3 99.5</td></tr>
+    <tr><td>SVOX-night</td><td>$\color{red}{\mathbf{98.4}}$ 99.5 99.8</td><td>98.2 99.6 99.9</td><td>93.1 98.2 99.0</td><td>$\color{red}{\mathbf{96.5}}$ 98.4 99.3</td></tr>
+    <tr><td>SVOX-overcast</td><td>97.7 99.2 99.4</td><td>$\color{red}{\mathbf{98.2}}$ 99.4 99.7</td><td>$\color{red}{\mathbf{97.7}}$ 99.2 99.4</td><td>$\color{red}{\mathbf{97.7}}$ 99.3 99.4</td></tr>
+    <tr><td>SVOX-rain</td><td>97.4 99.6 99.6</td><td>$\color{red}{\mathbf{98.6}}$ 99.7 99.8</td><td>96.2 99.1 99.6</td><td>$\color{red}{\mathbf{97.9}}$ 99.7 99.8</td></tr>
+    <tr><td>SVOX-snow</td><td>98.3 99.7 99.8</td><td>$\color{red}{\mathbf{98.7}}$ 99.5 99.8</td><td>$\color{red}{\mathbf{98.7}}$ 99.5 99.5</td><td>97.7 99.7 99.7</td></tr>
+    <tr><td>SVOX-sun</td><td>97.8 99.4 99.6</td><td>$\color{red}{\mathbf{97.9}}$ 99.4 99.5</td><td>$\color{red}{\mathbf{96.7}}$ 98.9 99.3</td><td>96.6 98.9 99.5</td></tr>
   </tbody>
 </table>
+
 
 ## 📚 Related Work
 Our another ICLR 2026 work (single-stage VPR based on DINOv2) [SAGE](https://openreview.net/forum?id=DCpbEXqPvS) achieved SOTA performance on several datasets. The code is released at [here](https://github.com/chenshunpeng/SAGE).

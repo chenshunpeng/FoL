@@ -31,9 +31,31 @@ SF_XL_QUERY_FOLDERS = OrderedDict([
     ("SF_XL_night", "queries_night"),
     ("SF_XL_occlusion", "queries_occlusion"),
 ])
+SVOX_QUERY_FOLDERS = OrderedDict([
+    ("SVOX", "queries"),
+    ("SVOX-night", "queries_night"),
+    ("SVOX-overcast", "queries_overcast"),
+    ("SVOX-rain", "queries_rain"),
+    ("SVOX-snow", "queries_snow"),
+    ("SVOX-sun", "queries_sun"),
+])
+
+
+def _normalize_dataset_name(dataset_name):
+    return dataset_name.lower().replace("-", "_")
+
+
 SF_XL_QUERY_ALIASES = {
-    dataset_name.lower(): (dataset_name, queries_folder)
+    _normalize_dataset_name(dataset_name): (dataset_name, queries_folder)
     for dataset_name, queries_folder in SF_XL_QUERY_FOLDERS.items()
+}
+SVOX_QUERY_ALIASES = {
+    "svox_base": ("SVOX", SVOX_QUERY_FOLDERS["SVOX"]),
+    **{
+        _normalize_dataset_name(dataset_name): (dataset_name, queries_folder)
+        for dataset_name, queries_folder in SVOX_QUERY_FOLDERS.items()
+        if dataset_name != "SVOX"
+    },
 }
 
 def path_to_pil_img(path):
@@ -71,9 +93,11 @@ class BaseDataset(data.Dataset):
         super().__init__()
         self.args = args
         self.dataset_name = dataset_name
-        normalized_dataset_name = dataset_name.lower()
+        normalized_dataset_name = _normalize_dataset_name(dataset_name)
         is_sf_xl_group = normalized_dataset_name == "sf_xl"
         is_sf_xl_query_set = normalized_dataset_name in SF_XL_QUERY_ALIASES
+        is_svox_group = normalized_dataset_name == "svox"
+        is_svox_query_set = normalized_dataset_name in SVOX_QUERY_ALIASES
 
         # Modify the folder structure based on specific dataset names
         if is_sf_xl_group or is_sf_xl_query_set:
@@ -81,7 +105,10 @@ class BaseDataset(data.Dataset):
                 raise ValueError("SF_XL query sets are only available for the test split")
             self.dataset_name = "SF_XL" if is_sf_xl_group else SF_XL_QUERY_ALIASES[normalized_dataset_name][0]
             self.dataset_folder = join(datasets_folder, "SF_XL", split)
-        elif dataset_name in ["SVOX_Night", "SVOX_Rain", "SVOX_Sun", "SVOX_Snow", "SVOX_Overcast", "SVOX"]:
+        elif is_svox_group or is_svox_query_set:
+            if is_svox_group and split != "test":
+                raise ValueError("The combined SVOX query set is only available for the test split")
+            self.dataset_name = "SVOX" if is_svox_group else SVOX_QUERY_ALIASES[normalized_dataset_name][0]
             self.dataset_folder = join(datasets_folder, "svox", "images", split)
         else:
             self.dataset_folder = join(datasets_folder, dataset_name, "images", split)
@@ -94,20 +121,8 @@ class BaseDataset(data.Dataset):
 
 
         # Determine the correct folders based on dataset_name
-        if self.dataset_name in ["SVOX_Night", "SVOX_Rain", "SVOX_Sun", "SVOX_Snow", "SVOX_Overcast", "SVOX"]:
+        if is_svox_group or is_svox_query_set:
             database_folder = join(self.dataset_folder, "gallery")
-            if self.dataset_name == "SVOX_Night":
-                queries_folder = join(self.dataset_folder, "queries_night")
-            elif self.dataset_name == "SVOX_Rain":
-                queries_folder = join(self.dataset_folder, "queries_rain")
-            elif self.dataset_name == "SVOX_Sun":
-                queries_folder = join(self.dataset_folder, "queries_sun")
-            elif self.dataset_name == "SVOX_Snow":
-                queries_folder = join(self.dataset_folder, "queries_snow")
-            elif self.dataset_name == "SVOX_Overcast":
-                queries_folder = join(self.dataset_folder, "queries_overcast")
-            elif self.dataset_name == "SVOX":
-                queries_folder = join(self.dataset_folder, "queries")
         elif is_sf_xl_group or is_sf_xl_query_set:
             database_folder = join(self.dataset_folder, "database")
         else:
@@ -118,10 +133,11 @@ class BaseDataset(data.Dataset):
         self.database_paths = sorted(glob(join(database_folder, "**", "*.jpg"), recursive=True))
 
         self.query_group_slices = None
-        if is_sf_xl_group:
+        if is_sf_xl_group or is_svox_group:
+            query_folders = SF_XL_QUERY_FOLDERS if is_sf_xl_group else SVOX_QUERY_FOLDERS
             self.queries_paths = []
             self.query_group_slices = OrderedDict()
-            for query_set_name, queries_folder_name in SF_XL_QUERY_FOLDERS.items():
+            for query_set_name, queries_folder_name in query_folders.items():
                 queries_folder = join(self.dataset_folder, queries_folder_name)
                 if not os.path.exists(queries_folder):
                     raise FileNotFoundError(f"Folder {queries_folder} does not exist")
@@ -132,6 +148,9 @@ class BaseDataset(data.Dataset):
         else:
             if is_sf_xl_query_set:
                 _, queries_folder_name = SF_XL_QUERY_ALIASES[normalized_dataset_name]
+                queries_folder = join(self.dataset_folder, queries_folder_name)
+            elif is_svox_query_set:
+                _, queries_folder_name = SVOX_QUERY_ALIASES[normalized_dataset_name]
                 queries_folder = join(self.dataset_folder, queries_folder_name)
             if not os.path.exists(queries_folder):
                 raise FileNotFoundError(f"Folder {queries_folder} does not exist")
