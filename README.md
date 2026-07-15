@@ -2,6 +2,7 @@
 
 <p align="center">
   <a href="https://huggingface.co/shunpeng/FoL"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-FoL-F58220?style=flat-square&labelColor=444444" alt="Hugging Face"></a>
+  <a href="https://huggingface.co/spaces/shunpeng/fol-visual-place-recognition"><img src="https://img.shields.io/badge/🤗%20Spaces-Live%20Demo-06B6D4?style=flat-square&labelColor=444444" alt="Hugging Face Spaces Demo"></a>
   <a href="https://chenshunpeng.github.io/projects/FoL/"><img src="https://img.shields.io/badge/Project-Page-10B981?style=flat-square&labelColor=444444" alt="Project Page"></a>
   <a href="https://arxiv.org/abs/2504.09881"><img src="https://img.shields.io/badge/arXiv-2504.09881-D32F2F?style=flat-square&labelColor=444444" alt="arXiv"></a>
   <a href="https://github.com/chenshunpeng/FoL"><img src="https://img.shields.io/github/stars/chenshunpeng/FoL?style=flat-square&labelColor=444444&color=EAB308&logo=github" alt="GitHub stars"></a>
@@ -15,6 +16,16 @@ This is the official repository for the AAAI 2025 paper "FoL" available at [AAAI
 We introduce Focus on Local **(FoL)**, a two-stage Visual Place Recognition (VPR) approach that enhances image retrieval and re-ranking by identifying and leveraging **reliable discriminative local regions**.
 
 <img src="image/pipeline.jpg" width="800px">
+
+## 🤗 Live Demo
+
+Try FoL directly in our [Hugging Face Space](https://huggingface.co/spaces/shunpeng/fol-visual-place-recognition). Upload a query image and a database image (or select one of the provided example pairs). The demo visualizes reliable discriminative regions, local correspondences, and geometrically verified matches, while also reporting the global cosine similarity, local match count, and RANSAC inlier count.
+
+<p align="center">
+  <a href="https://huggingface.co/spaces/shunpeng/fol-visual-place-recognition">
+    <img src="image/HF_Spaces_FoL.png" width="100%" alt="FoL Visual Place Recognition Hugging Face Space">
+  </a>
+</p>
 
 ## 🛠️ Setup & Requirements
 **Quick install:**
