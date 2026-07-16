@@ -1,15 +1,25 @@
 # Focus on Local: Finding Reliable Discriminative Regions for Visual Place Recognition
 
 <p align="center">
+  <a href="https://chenshunpeng.github.io/projects/FoL/"><img src="https://img.shields.io/badge/Project-Page-10B981?style=flat-square&labelColor=444444" alt="Project Page"></a>
   <a href="https://huggingface.co/shunpeng/FoL"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-FoL-F58220?style=flat-square&labelColor=444444" alt="Hugging Face"></a>
   <a href="https://huggingface.co/spaces/shunpeng/fol-visual-place-recognition"><img src="https://img.shields.io/badge/🤗%20Spaces-Live%20Demo-06B6D4?style=flat-square&labelColor=444444" alt="Hugging Face Spaces Demo"></a>
-  <a href="https://chenshunpeng.github.io/projects/FoL/"><img src="https://img.shields.io/badge/Project-Page-10B981?style=flat-square&labelColor=444444" alt="Project Page"></a>
   <a href="https://arxiv.org/abs/2504.09881"><img src="https://img.shields.io/badge/arXiv-2504.09881-D32F2F?style=flat-square&labelColor=444444" alt="arXiv"></a>
   <a href="https://github.com/chenshunpeng/FoL"><img src="https://img.shields.io/github/stars/chenshunpeng/FoL?style=flat-square&labelColor=444444&color=EAB308&logo=github" alt="GitHub stars"></a>
   <a href="https://colab.research.google.com/drive/1CxchBdFYxzwtCf5UOUgjMt8FxKMo2A-5?usp=sharing"><img src="https://img.shields.io/badge/Colab-Demo-2563EB?style=flat-square&labelColor=444444&logo=googlecolab" alt="Colab Demo"></a>
+    <a href="https://arxiv.org/abs/2604.22390"><img src="https://img.shields.io/badge/Extension-FoL%2B%2B-8B5CF6?style=flat-square&labelColor=444444" alt="FoL++ Extension"></a>
 </p>
 
 This is the official repository for the AAAI 2025 paper "FoL" available at [AAAI Paper Page](https://ojs.aaai.org/index.php/AAAI/article/view/32811). In addition, our paper and its extensive supplementary materials can be found on [arXiv](https://arxiv.org/abs/2504.09881).
+
+## 📑 Contents
+
+- [Summary](#summary) · [Live Demo](#live-demo) · [Setup](#setup)
+- [Torch Hub](#torch-hub) · [Pretrained Weights](#pretrained-weights)
+- [Evaluation](#evaluation) · [Training](#training) · [Visualization](#visualization)
+- [Performance](#performance) · [Related Work](#related-work) · [Citation](#citation)
+
+<a id="summary"></a>
 
 ## 📝 Summary
 
@@ -17,15 +27,19 @@ We introduce Focus on Local **(FoL)**, a two-stage Visual Place Recognition (VPR
 
 <img src="image/pipeline.jpg" width="800px">
 
+<a id="live-demo"></a>
+
 ## 🤗 Live Demo
 
-Try FoL directly in our [Hugging Face Space](https://huggingface.co/spaces/shunpeng/fol-visual-place-recognition). Upload a query image and a database image (or select one of the provided example pairs). The demo visualizes reliable discriminative regions, local correspondences, and geometrically verified matches, while also reporting the global cosine similarity, local match count, and RANSAC inlier count.
+Try FoL in our [Hugging Face Space](https://huggingface.co/spaces/shunpeng/fol-visual-place-recognition). Upload a query image and database image, or select a provided pair. The demo visualizes reliable discriminative regions, local correspondences, and geometrically verified matches, while also reporting the global cosine similarity, local match count, and RANSAC inlier count.
 
 <p align="center">
   <a href="https://huggingface.co/spaces/shunpeng/fol-visual-place-recognition">
     <img src="image/HF_Spaces_FoL.png" width="100%" alt="FoL Visual Place Recognition Hugging Face Space">
   </a>
 </p>
+
+<a id="setup"></a>
 
 ## 🛠️ Setup & Requirements
 **Quick install:**
@@ -48,6 +62,8 @@ opencv-python==4.10.0.84
 ```
 > **Note — reproducibility:** The reranking step is sensitive to small numerical differences across `faiss-gpu`, `torch`, and `numpy` versions. Use the exact versions (in [requirements.txt](https://github.com/chenshunpeng/FoL/blob/main/requirements.txt)) to match paper results.
 
+<a id="torch-hub"></a>
+
 ## ⚡ Quick Start with Torch Hub
 
 To quickly use our model without cloning the repository, you can easily load it via Torch Hub:
@@ -62,6 +78,8 @@ model = torch.hub.load("chenshunpeng/FoL", "FoL", pretrained=True, trust_repo=Tr
 model_vitl = torch.hub.load("chenshunpeng/FoL", "fol_vitl14", pretrained=True, trust_repo=True)
 model_vitb = torch.hub.load("chenshunpeng/FoL", "fol_vitb14", pretrained=True, trust_repo=True)
 ```
+
+<a id="pretrained-weights"></a>
 
 ## ⬇️ Download Pretrained Weights
 
@@ -78,9 +96,47 @@ You can download our pretrained FoL model either via Google Drive or directly fr
   ```
 ---
 
+<a id="evaluation"></a>
+
 ## 📊 Evaluation
 
-Assuming you have your datasets under `./datasets/` and your weights in `./weights/FoL.pth`:
+### Recommended Dataset Layout
+
+FoL expects standard datasets to contain `database/` and `queries/` under `<dataset_name>/images/test/`. SF-XL and SVOX use shared database/gallery images with multiple query subsets:
+
+```text
+datasets/
+├── pitts30k/
+│   └── images/test/
+│       ├── database/
+│       └── queries/
+├── amstertime/
+│   └── images/test/
+│       ├── database/
+│       └── queries/
+├── <other_dataset_name>/
+│   └── images/test/
+│       ├── database/
+│       └── queries/
+├── SF_XL/
+│   └── test/
+│       ├── database/
+│       ├── queries_v1/
+│       ├── queries_v2/
+│       ├── queries_night/
+│       └── queries_occlusion/
+└── svox/
+    └── images/test/
+        ├── gallery/
+        ├── queries/
+        ├── queries_night/
+        ├── queries_overcast/
+        ├── queries_rain/
+        ├── queries_snow/
+        └── queries_sun/
+```
+
+Assuming you have your datasets under `./datasets/` and the ViT-L checkpoint at `./weights/FoL_large.pth`:
 
 ```bash
 python eval.py --eval_datasets_folder=./datasets/ --dataset_names pitts30k amstertime --resume=./weights/FoL_large.pth
@@ -102,11 +158,15 @@ python eval.py --eval_datasets_folder=./datasets/ --dataset_names SF_XL --resume
 python eval.py --eval_datasets_folder=./datasets/ --dataset_names SVOX --resume=./weights/FoL_large.pth --resize 322 322 --efficient_ram_testing --efficient_ram_cache_dir=/data_nvme/VPR/FoL --efficient_ram_max_cache_gib=500 --efficient_ram_min_free_gib=500
 ```
 
+<a id="training"></a>
+
 ## 🚀 Train
 
 ```bash
 python train.py --eval_datasets_folder=./datasets/ --eval_dataset_name pitts30k --epochs_num=8 --train_batch_size=60 --lr=6e-5 --optim=adamw --resize 322 322 --save_dir train_log/
 ```
+
+<a id="visualization"></a>
 
 ## 🎨 Visualization [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1CxchBdFYxzwtCf5UOUgjMt8FxKMo2A-5?usp=sharing)
 
@@ -149,6 +209,8 @@ Below we show a comparison of matching results:
 </tr>
 </table>
 Geometric verification effectively removes outliers and improves match consistency (Matches: 29 → 21).
+
+<a id="performance"></a>
 
 ## 📈 Performance
  
@@ -232,14 +294,18 @@ The following table reports results at 322×322 on six datasets for both backbon
 </table>
 
 
+<a id="related-work"></a>
+
 ## 📚 Related Work
-Our another ICLR 2026 work (single-stage VPR based on DINOv2) [SAGE](https://openreview.net/forum?id=DCpbEXqPvS) achieved SOTA performance on several datasets. The code is released at [here](https://github.com/chenshunpeng/SAGE).
+Our ICLR 2026 work (single-stage VPR based on DINOv2) [SAGE](https://openreview.net/forum?id=DCpbEXqPvS) achieved SOTA performance on several datasets. The code is released at [here](https://github.com/chenshunpeng/SAGE).
 
 
 ## 🙏 Acknowledgements
 
 This code is based on the excellent work of [SelaVPR](https://github.com/Lu-Feng/SelaVPR), [CricaVPR](https://github.com/Lu-Feng/CricaVPR), [SALAD](https://github.com/serizba/salad), [Visual Geo-localization benchmark](https://github.com/gmberton/deep-visual-geo-localization-benchmark), [VPR-datasets-downloader](https://github.com/gmberton/VPR-datasets-downloader), [GSV-Cities](https://github.com/amaralibey/gsv-cities), and [MixVPR](https://github.com/amaralibey/MixVPR).
 
+
+<a id="citation"></a>
 
 ## 📌 Citation
 
