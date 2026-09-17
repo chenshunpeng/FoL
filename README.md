@@ -10,6 +10,30 @@
     <a href="https://arxiv.org/abs/2604.22390"><img src="https://img.shields.io/badge/Extension-FoL%2B%2B-8B5CF6?style=flat-square&labelColor=444444" alt="FoL++ Extension"></a>
 </p>
 
+<p align="center">
+  <a href="https://paperswithcode.co/api/v1/papers/2504.09881/leaderboard-badge-link?eval=31461">
+    <img src="https://paperswithcode.co/api/v1/papers/2504.09881/leaderboard-badge.svg?eval=31461&live=1" alt="Papers with Code: SOTA on AmsterTime">
+  </a>
+  <a href="https://paperswithcode.co/api/v1/papers/2504.09881/leaderboard-badge-link?eval=31483">
+    <img src="https://paperswithcode.co/api/v1/papers/2504.09881/leaderboard-badge.svg?eval=31483&live=1" alt="Papers with Code: SOTA on SF-XL Occlusion">
+  </a>
+  <a href="https://paperswithcode.co/api/v1/papers/2504.09881/leaderboard-badge-link?eval=31488">
+    <img src="https://paperswithcode.co/api/v1/papers/2504.09881/leaderboard-badge.svg?eval=31488&live=1" alt="Papers with Code: SOTA on SVOX Night">
+  </a>
+</p>
+
+<p align="center">
+  <a href="https://paperswithcode.co/api/v1/papers/2504.09881/leaderboard-badge-link?eval=31498">
+    <img src="https://paperswithcode.co/api/v1/papers/2504.09881/leaderboard-badge.svg?eval=31498&live=1" alt="Papers with Code: SOTA on SVOX Rain">
+  </a>
+  <a href="https://paperswithcode.co/api/v1/papers/2604.22390/leaderboard-badge-link?eval=31751">
+    <img src="https://paperswithcode.co/api/v1/papers/2604.22390/leaderboard-badge.svg?eval=31751&live=1" alt="Papers with Code: SOTA on Eynsham">
+  </a>
+  <a href="https://paperswithcode.co/api/v1/papers/2604.22390/leaderboard-badge-link?eval=31739">
+    <img src="https://paperswithcode.co/api/v1/papers/2604.22390/leaderboard-badge.svg?eval=31739&live=1" alt="Papers with Code: SOTA on MSLS Validation">
+  </a>
+</p>
+
 This is the official repository for the AAAI 2025 paper "FoL" available at [AAAI Paper Page](https://ojs.aaai.org/index.php/AAAI/article/view/32811). In addition, our paper and its extensive supplementary materials can be found on [arXiv](https://arxiv.org/abs/2504.09881).
 
 ## 📑 Contents
